@@ -22,6 +22,7 @@ def get_response_from_ai_agent(query,selected_model):
         include_raw_content=True,
         include_images=True,
         exclude_domains=[],
+        search_depth="advanced",
     )
 
     responses = tool.invoke({"query": query})  # Pass the query variable to invoke
