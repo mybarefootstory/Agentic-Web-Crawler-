@@ -1,9 +1,7 @@
 python-dotenv
 langchain_groq
 langchain_community
-langchain_deepseek
 langgraph
-pydantic
-fastapi
-uvicorn
 streamlit
+ipykernel
+tavily-python

@@ -5,52 +5,59 @@ from dotenv import load_dotenv
 load_dotenv()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
+
 # print(GROQ_API_KEY)
 
 
 # Step 2: Setup LLM & Tools
+from langchain_community.tools import TavilySearchResults
 from langchain_groq import ChatGroq
-from langchain_deepseek import ChatDeepSeek
-from langchain_openai import ChatOpenAI
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain.prompts import ChatPromptTemplate
+from langchain.chains import LLMChain
 
-
-groq_llm = ChatGroq(model="llama-3.3-70b-versatile")
-deepseek_llm = ChatDeepSeek(model="deepseek-r1-distill-qwen-32b")
-groq_llm2= ChatGroq(model="mixtral-8x7b-32768",temperature=0.0,
-    max_retries=2,)
-
-# Step 3: Setup AI Agent with search tool functionality
-from langgraph.prebuilt import create_react_agent
-from langchain_core.messages.ai import AIMessage
-
-system_prompt = "Act as an AI chatbot who is smart and friendly"
-def get_response_from_ai_agent(llm_id, query, allow_search, system_prompt, provider):
-    if provider == "Groq":
-        llm = ChatGroq(model=llm_id)
-    elif provider == "OPENAI":
-        llm = ChatOpenAI(model=llm_id)
-    tools = [TavilySearchResults(max_results=2)] if allow_search else []
-    agent = create_react_agent(
-        model=llm,
-        tools=tools,
-        state_modifier=system_prompt,
+def get_response_from_ai_agent(query,selected_model):
+    tool = TavilySearchResults(
+        max_results=5,
+        include_answer=True,
+        include_raw_content=True,
+        include_images=True,
+        exclude_domains=[],
     )
-    state = {"messages":query}
-    response = agent.invoke(state)
-    messages = response.get("messages")
-    ai_messages = [message.content for message in messages if isinstance(message, AIMessage)] #Picking only AIMessage
-    # print(ai_messages[-1])
-    return ai_messages[-1]
 
-    # Code to invoke other groq LLM 2
-    # messages = [
-    #     ("system", "You are a helpful translator. Translate the user sentence to French."),
-    #     ("human", "I love programming."),
-    # ]
-    # groq_llm2.invoke(messages)
+    responses = tool.invoke({"query": query})  # Pass the query variable to invoke
+
+    # for response in responses:
+    #     url = response.get("url", "")  # Use .get() to handle missing keys safely
+    #     content = response.get("content", "")
+    #     print(f"URL: {url}\nContent: {content}\n---") # Print with separator for clarity
+
+    # 1. Extract and combine content
+    combined_content = "\n\n".join([response.get("content", "") for response in responses])
+
+    # 2. Set up the Groq LLM
+    groq_llm = ChatGroq(model=selected_model,max_tokens = 1000)  # Make sure this model is accessible
+
+    # 3. Create a prompt template
+    prompt_template =f"""
+    {query}
+    You are a expert AI assistant.Above is the query you need to answer. Use the following information to answer the question. : 
+
+    {combined_content}
+
+    Answer concisely and accurately.
+    """
+
+    # 4. Create an LLM chain
+    prompt = ChatPromptTemplate.from_template(prompt_template)
+    chain = LLMChain(llm=groq_llm, prompt=prompt)
+
+    # 5. Run the chain with the combined content
+    final_answer = chain.run(context=combined_content)
+    return responses,final_answer
+
+
+
+    
 
 
 
