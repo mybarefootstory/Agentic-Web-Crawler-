@@ -1,60 +1,40 @@
-#Step 1: Setup UI with Streamlit (model provider, model, system prompt, query)
-from ai_agent import get_response_from_ai_agent
+# Step 1: Set up the Streamlit UI
 import streamlit as st
+from ai_agent import get_response_from_ai_agent  # Import the agent function
 
-st.set_page_config(page_title="LangGraph Agent UI",layout="centered")
-st.title("AI Chapbot Agents")
-st.write("Create and Interact with the AI Agents...")
+# Configure the Streamlit page
+st.set_page_config(page_title="LangGraph Agent UI", layout="centered")
+st.title("AI Chatbot Agents")  # Set the title of the app
+st.write("Create and Interact with the AI Agents...")  # Display a description
 
-MODEL_NAMES_GROQ = ["llama-3.3-70b-versatile","llama3-8b-8192"]
+# Define the available Groq model names
+MODEL_NAMES_GROQ = ["llama-3.3-70b-versatile", "llama3-8b-8192"]
 
-provider = st.checkbox("Groq")
+# Create a checkbox for the Groq provider
+provider = st.checkbox("Groq")  # User selects if they want to use Groq
 if provider:
-    selected_model = st.selectbox("Select Groq Model : ",MODEL_NAMES_GROQ)
+    # Display a dropdown to select the Groq model
+    selected_model = st.selectbox("Select Groq Model:", MODEL_NAMES_GROQ)
 
+# Create a text area for the user's query
+user_query = st.text_area("Enter your query:", height=150, placeholder="Ask Anything...")
 
-allow_web_search = st.checkbox("Allow Web Search")
-
-user_query = st.text_area("Enter your query: ",height=150, placeholder="Ask Anything...")
-
+# Create a button to trigger the agent
 if st.button("Ask Agent!"):
-    if user_query.strip():
-        #Step 2: Connect with backend via URL
-        responses,final_answer = get_response_from_ai_agent(user_query,selected_model)
+    # Check if the user has entered a query
+    if user_query.strip():  # Ignore empty queries
+        # Step 2: Get the response from the AI agent
+        responses, final_answer = get_response_from_ai_agent(user_query, selected_model)
 
+        # Display the search results
         for response in responses:
-            url = response.get("url", "")  # Use .get() to handle missing keys safely
-            content = response.get("content", "")
-            final_content = content[:400] + "............" if len(content) > 40 else content
-            # print(f"URL: {url}\nContent: {content}\n---") # Print with separator for clarity
-            st.write(f"URL: {url}\nContent: {final_content}\n\n---")
+            url = response.get("url", "")  # Get the URL, handle missing keys
+            content = response.get("content", "")  # Get the content, handle missing keys
+            final_content = content[:100] + "............" if len(content) > 400 else content  # Truncate content for display
+            st.write(f"URL: {url}\n\nContent: {final_content}\n\n---")  # Display URL and truncated content
 
+        # Display the final answer from the LLM
         st.markdown(f"**Final Response:** {final_answer}")
 
-        # payload={
-        #     "model_name":selected_model,
-        #     "model_provider":provider,
-        #     "system_prompt": system_prompt,
-        #     "messages": [user_query],
-        #     "allow_search": allow_web_search
-        # }
-        # response = requests.post(API_URL,json=payload)
-        # if response.status_code==200:
-        #     response_data = response.json()
-        #     if "error" in response_data:
-        #         st.error(response_data["error"])
-        #     else:
-        #         st.subheader("Agent Response")
-        #         st.markdown(f"**Final Response:** {response_data}")
-
-        
-
-
-
-
-
-
-
-
-
-
+    else:
+        st.error("Please enter a query.")
