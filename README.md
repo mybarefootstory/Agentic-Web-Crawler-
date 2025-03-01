@@ -1,4 +1,3 @@
-```markdown
 # Agentic Web Crawler
 
 This project demonstrates an AI-powered agentic web crawler that answers user queries by combining web search results with a large language model (LLM).  It uses Tavily for web searching, Groq's LLMs for answer generation, and Streamlit for a user-friendly interface.
